@@ -8,8 +8,12 @@ to run:
 
 currently added
 
-**grayscale effect**
+<h2>grayscale effect</h2><br />
 pretty self explanatory I'd assume
+<br />
+
+<h2>image inversion</h2><br/>
+Inverts the given image's colors
 
 
 
