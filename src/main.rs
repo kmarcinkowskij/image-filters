@@ -1,10 +1,12 @@
 use image::{DynamicImage, GenericImageView, ImageBuffer, Rgba, RgbaImage};
 
-#[derive(Debug, Clone)]
+/*#[derive(Debug, Clone)]
 struct PixelInfo {
     pixel_color:Vec<u8>,
     brightness: f32
 }
+*/
+
 
 fn save_from_buffer(_image_buffer: &RgbaImage, _name: &str) {
     match _image_buffer.save(_name.to_owned() + ".png") {
@@ -35,8 +37,10 @@ fn invert_image_filter(_image: &DynamicImage, _name: &str) {
     save_from_buffer(&image_buffer, &_name)
 }
 fn main() {
-    let image_path: &str = "image.png";
+    let base_path: &str = "./images/";
+    let edited_path: &str = "./images/edited/";
+    let image_path: &str = &(base_path.to_string() + "base_image.png");
     let image = image::open(image_path).unwrap();
-    grayscale_filter(&image, "grayscale");
-    invert_image_filter(&image, "inverted");
+    grayscale_filter(&image, &(edited_path.to_string() + "grayscale"));
+    invert_image_filter(&image, &(edited_path.to_string() + "inverted"));
 }
