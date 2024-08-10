@@ -26,8 +26,17 @@ fn grayscale_filter(_image: &DynamicImage, _name: &str) {
     }
     save_from_buffer(&image_buffer, &_name)
 }
+
+fn invert_image_filter(_image: &DynamicImage, _name: &str) {
+    let mut image_buffer: RgbaImage = ImageBuffer::new(_image.dimensions().0, _image.dimensions().1);
+    for pixel in _image.pixels() {
+        image_buffer[(pixel.0, pixel.1)] = Rgba([pixel.2[3] - pixel.2[0], pixel.2[3] - pixel.2[1], pixel.2[3] - pixel.2[2], pixel.2[3]]);
+    }
+    save_from_buffer(&image_buffer, &_name)
+}
 fn main() {
     let image_path: &str = "image.png";
     let image = image::open(image_path).unwrap();
     grayscale_filter(&image, "grayscale");
+    invert_image_filter(&image, "inverted");
 }
