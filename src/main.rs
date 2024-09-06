@@ -1,3 +1,5 @@
+use std::thread::current;
+
 use image::{DynamicImage, GenericImageView, ImageBuffer, Rgba, RgbaImage};
 
 /*#[derive(Debug, Clone)]
@@ -40,11 +42,33 @@ fn invert_image_filter(_image: &DynamicImage, _name: &str) {
     }
     save_from_buffer(&image_buffer, &_name)
 }
+
+fn pixelation(_image: &DynamicImage, _name: &str) {
+    let mut image_buffer: RgbaImage = ImageBuffer::new(_image.dimensions().0, _image.dimensions().1);
+    let mut current_color: Rgba<u8>;
+    let kernel_percent: f32 = 0.005;
+    let kernel_size_horizontal = (_image.dimensions().0 as f32 * kernel_percent) as u32;
+    let kernel_size_vertical = (_image.dimensions().1 as f32 * kernel_percent) as u32;
+
+    for vertical in 0.._image.dimensions().1 / kernel_size_vertical {
+        for horizontal in 0.._image.dimensions().0 / kernel_size_horizontal {
+            current_color = _image.get_pixel(horizontal*kernel_size_horizontal + kernel_size_horizontal/2, vertical*kernel_size_vertical + kernel_size_vertical/2);
+            for i in horizontal*kernel_size_horizontal..(horizontal+1)*kernel_size_horizontal{
+                                for y in vertical*kernel_size_vertical..(vertical+1)*kernel_size_vertical {
+                                    image_buffer[(i,y)] = current_color;
+                                }
+                            }                    
+        }
+    }
+    save_from_buffer(&image_buffer, &_name)
+}
+
 fn main() {
     let base_path: &str = "./images/";
     let edited_path: &str = "./images/edited/";
     let image_path: &str = &(base_path.to_string() + "base_image.png");
     let image = image::open(image_path).unwrap();
-    grayscale_filter(&image, &(edited_path.to_string() + "grayscale"));
-    invert_image_filter(&image, &(edited_path.to_string() + "inverted"));
+    // grayscale_filter(&image, &(edited_path.to_string() + "grayscale"));
+    // invert_image_filter(&image, &(edited_path.to_string() + "inverted"));
+    pixelation(&image, &(edited_path.to_string() + "pixelated"));
 }
