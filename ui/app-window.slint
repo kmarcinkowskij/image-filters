@@ -1,0 +1,51 @@
+import { Button, VerticalBox, HorizontalBox, Slider } from "std-widgets.slint";
+
+export component AppWindow inherits Window {
+    in-out property <int> counter: 42;
+    in_out property <float> desaturation_value;
+    in-out property <image> input_image: @image-url("../images/base_image.png");
+    callback request-increase-value();
+    callback request-invert-image();
+    callback request-grayscale-image();
+    callback request-change-image();
+    
+    VerticalBox {
+        alignment: center;
+        Button {
+            text: "Change image";
+            clicked => {request-change-image()}
+        }
+        Image {
+            source: input_image;
+        }
+        HorizontalBox {
+            Button {
+                text: "Invert";
+                clicked => {request-invert-image()}
+            }
+            Button {
+                text: "Grayscale";
+                clicked => {request-grayscale-image()}
+            }
+
+        }
+        // HorizontalBox {
+        //     VerticalBox {
+        //         Text {
+        //             text: "Desaturate image";
+        //         }
+        //         Slider {
+        //             width: 400px;
+        //             height: 100px;
+        //             value: desaturation_value;
+        //         }
+        //         Button {
+        //             text: "Desaturate";
+        //             clicked => {request_desaturate_image()}
+        //         }
+        //     }
+            
+        // }
+        
+    }
+}
