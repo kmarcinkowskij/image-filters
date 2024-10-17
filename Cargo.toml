@@ -5,3 +5,9 @@ edition = "2021"
 
 [dependencies]
 image = "*"
+slint = "1.8.0"
+native-dialog = "0.7.0"
+
+
+[build-dependencies]
+slint-build = "1.8.0"

@@ -1,74 +1,105 @@
-use std::thread::current;
+// mod modules;
 
-use image::{DynamicImage, GenericImageView, ImageBuffer, Rgba, RgbaImage};
-
-/*#[derive(Debug, Clone)]
-struct PixelInfo {
-    pixel_color:Vec<u8>,
-    brightness: f32
-}
-*/
+// slint::include_modules!();
 
 
-fn save_from_buffer(_image_buffer: &RgbaImage, _name: &str) {
-    match _image_buffer.save(_name.to_owned() + ".png") {
-        Ok(()) => {
-            println!("Sucessfully saved file")
-        }, 
-        Err(error) => {
-            println!("Problems while saving file!, {}", error);
+// fn main() -> Result<(), Box<dyn Error>>  {
+//     let ui = AppWindow::new()?;
+//     ui.run()?;
+//     let base_path: &str = "./images/";
+//     let edited_path: &str = "./images/edited/";
+//     let image_path: &str = &(base_path.to_string() + "base_image.png");
+//     let image = image::open(image_path).unwrap();
+//     // grayscale_filter(&image, &(edited_path.to_string() + "grayscale"));
+//     // invert_image_filter(&image, &(edited_path.to_string() + "inverted"));
+//     modules::functions::pixelation(&image, &(edited_path.to_string() + "pixelated2"));
+// }
+
+// Prevent console window in addition to Slint window in Windows release builds when, e.g., starting the app via file manager. Ignored on other platforms.
+#![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
+
+mod image_modules;
+use std::error::Error;
+use native_dialog::{FileDialog};
+
+use image::DynamicImage;
+use image_modules::functions::{slint_grayscale_image, slint_invert_image};
+use slint::{Image, Rgba8Pixel, SharedPixelBuffer};
+
+slint::include_modules!();
+
+fn main() -> Result<(), Box<dyn Error>> {
+    let ui = AppWindow::new().unwrap();
+    let undo_image = ui.get_input_image();
+    
+
+
+    ui.on_request_change_image({
+        let ui_handle = ui.as_weak();
+        move || {
+            let ui = ui_handle.unwrap();
+            let path = FileDialog::new()
+                .set_location("~/Desktop")
+                .add_filter("PNG Image", &["png"])
+                .add_filter("JPEG Image", &["jpg", "jpeg"])
+                .show_open_single_file()
+                .unwrap();
+
+                if path == None {
+                    return;
+                }
+                
+                let result = path.unwrap();
+                let opened_image = image::open(&result.as_path()).expect("Error loading cat image").into_rgba8();
+                
+                let buffer = SharedPixelBuffer::<Rgba8Pixel>::clone_from_slice(
+                    opened_image.as_raw(),
+                    opened_image.width(),
+                    opened_image.height(),
+                );
+
+                let final_image = Image::from_rgba8(buffer);
+            
+            ui.set_input_image(final_image);
         }
-    }
-}
+    });
 
-fn grayscale_filter(_image: &DynamicImage, _name: &str) {
-    let mut image_buffer: RgbaImage = ImageBuffer::new(_image.dimensions().0, _image.dimensions().1);
-    let mut current_pixel_brightness: u8;
-    for pixel in _image.pixels() {
-        //pixel: (X, Y, [R, G, B, A]);
-        //calculate pixel brightness, use it as color value to get grayscale effect
-        current_pixel_brightness = (0.2126 * pixel.2.0[0] as f32 + 0.7152*pixel.2.0[1] as f32 + 0.0722*pixel.2.0[2] as f32) as u8;
-        image_buffer[(pixel.0, pixel.1)] = Rgba([current_pixel_brightness, current_pixel_brightness, current_pixel_brightness, 255]);
-    }
-    save_from_buffer(&image_buffer, &_name)
-}
-
-fn invert_image_filter(_image: &DynamicImage, _name: &str) {
-    let mut image_buffer: RgbaImage = ImageBuffer::new(_image.dimensions().0, _image.dimensions().1);
-    for pixel in _image.pixels() {
-        //pixel: (X, Y, [R, G, B, A]);
-        //subtract color value (R, G, B) from alpha value (A) per each pixel, set as color value 
-        image_buffer[(pixel.0, pixel.1)] = Rgba([pixel.2[3] - pixel.2[0], pixel.2[3] - pixel.2[1], pixel.2[3] - pixel.2[2], pixel.2[3]]);
-    }
-    save_from_buffer(&image_buffer, &_name)
-}
-
-fn pixelation(_image: &DynamicImage, _name: &str) {
-    let mut image_buffer: RgbaImage = ImageBuffer::new(_image.dimensions().0, _image.dimensions().1);
-    let mut current_color: Rgba<u8>;
-    let kernel_percent: f32 = 0.005;
-    let kernel_size_horizontal = (_image.dimensions().0 as f32 * kernel_percent) as u32;
-    let kernel_size_vertical = (_image.dimensions().1 as f32 * kernel_percent) as u32;
-
-    for vertical in 0.._image.dimensions().1 / kernel_size_vertical {
-        for horizontal in 0.._image.dimensions().0 / kernel_size_horizontal {
-            current_color = _image.get_pixel(horizontal*kernel_size_horizontal + kernel_size_horizontal/2, vertical*kernel_size_vertical + kernel_size_vertical/2);
-            for i in horizontal*kernel_size_horizontal..(horizontal+1)*kernel_size_horizontal{
-                                for y in vertical*kernel_size_vertical..(vertical+1)*kernel_size_vertical {
-                                    image_buffer[(i,y)] = current_color;
-                                }
-                            }                    
+    ui.on_request_invert_image({
+        let ui_handle = ui.as_weak();
+        move || {
+            let ui = ui_handle.unwrap();
+            
+            let image = ui.get_input_image();
+            let final_image = slint_invert_image(image);
+            ui.set_input_image(final_image);
         }
-    }
-    save_from_buffer(&image_buffer, &_name)
-}
+    });
 
-fn main() {
-    let base_path: &str = "./images/";
-    let edited_path: &str = "./images/edited/";
-    let image_path: &str = &(base_path.to_string() + "base_image.png");
-    let image = image::open(image_path).unwrap();
-    // grayscale_filter(&image, &(edited_path.to_string() + "grayscale"));
-    // invert_image_filter(&image, &(edited_path.to_string() + "inverted"));
-    pixelation(&image, &(edited_path.to_string() + "pixelated"));
+    // ui.on_request_desaturate_image({
+    //     let ui_handle = ui.as_weak();
+    //     let final_image = undo_image.clone();
+    //     move || {
+    //         let ui = ui_handle.unwrap();
+    //         let image = ui.get_input_image();
+    //         println!("{:?}", ui.get_desaturation_value());
+    //         let final_image = slint_grayscale_image(image);
+    //         ui.set_input_image(final_image);
+    //     }
+    // });
+
+    ui.on_request_grayscale_image({
+        let ui_handle = ui.as_weak();
+        let final_image = undo_image.clone();
+        move || {
+            let ui = ui_handle.unwrap();
+            let image = ui.get_input_image();
+            let final_image = slint_grayscale_image(image);
+            ui.set_input_image(final_image);
+        }
+    });
+
+
+    ui.run()?;
+
+    Ok(())
 }
