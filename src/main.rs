@@ -44,7 +44,11 @@ fn main() -> Result<(), Box<dyn Error>> {
                 .add_filter("JPEG Image", &["jpg", "jpeg"])
                 .show_open_single_file()
                 .unwrap();
-            
+
+                if path == None {
+                    return;
+                }
+                
                 let result = path.unwrap();
                 let opened_image = image::open(&result.as_path()).expect("Error loading cat image").into_rgba8();
                 
